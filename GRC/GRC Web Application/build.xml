@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="GRC" basedir="./">
+    
+           
+    <!-- Application Name   -->
+    <property name="appName"          value="GRC"/>
+    <property name="build.server"   value="Sustainability"/>
+    
+    <tstamp>
+        <format property="buildtime" pattern="yyyyMMddHHmm"/>
+    </tstamp>     
+    <property name="configFiles"     location="ConfigFiles" />
+    <property name="webRoot"         location="${basedir}/WebRoot" />
+    <property name="webInf"         location="${webRoot}/WEB-INF" />
+    <property name="src"             location="src" />
+    <property name="build.home"       location="${home}" />
+    <property name="lib.app"          location="${webRoot}/WEB-INF/lib" />
+    <property name="metainf"        location="${webRoot}/META-INF"/>
+    
+    <target name="DEV - export app">
+        <antcall target="make app ear">
+            <param name="service.home" value="${dev.service.home}"/>
+            <param name="export.home" value="${build.home}\${build.server}\${dev.deployed}"/>
+        </antcall>
+    </target>
+    
+    <target name="make app ear" depends="make app war">
+        <echo message="Creating EAR..."/>
+        <ear destfile="${export.home}/${appName}.ear" appxml="${metainf}/application.xml" manifest="${metainf}/MANIFEST.MF">
+            <fileset dir="${export.home}" includes="${appName}.war"/>
+        </ear>
+        <antcall target="make backup"/>
+    </target> 
+        
+    <path id="build.path">
+            <fileset dir="${lib.app}">
+                <include name="**/**"/>
+              </fileset>
+    </path>
+    
+    <target name="compile" depends="remove class files">
+        <echo message="Compiling Java Files..."/>
+            <javac srcdir="${src}" 
+                debug="true"
+                destdir="${webInf}\classes"
+                classpathref="build.path"
+            />    
+    </target>
+    
+    <!-- 4. Remove Class Files -->
+    <target name="remove class files">
+            <echo message="Removing Class Files..."/>
+            <delete  dir="${webInf}\classes\com"/>
+        </target>
+    
+    <target name="make app war" depends="compile">
+        <echo message="Creating WAR..."/>
+        <war warfile="${export.home}/${appName}.war" webxml="${webInf}/web.xml" manifest="${metainf}/MANIFEST.MF">
+            <webinf dir="${webInf}">
+                   <include name="**/*.*" />
+                   <exclude name="**/*.mex"/>    
+            </webinf>
+            <fileset dir="${webRoot}">
+                   <include name="css/" />               
+                   <include name="error/" />     
+                   <include name="images/" />
+                   <include name="javascript/"/>               
+                <include name="jsp/" />
+                   <include name="*.*" />
+                    <exclude name="META-INF/*.*"/>
+                <exclude name="WEB-INF"/>
+            </fileset>            
+        </war>
+    </target>
+    
+    <target name="make backup">
+        <echo message="Copying and renaming with date..."/>
+        <copy file="${export.home}/${appName}.ear" toFile="${export.home}/${appName}_${buildtime}.ear" overwrite="true"/>
+    </target>
+</project>
